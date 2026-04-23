@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>orcamento-ai | Importador Tecnico</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <main class="container">
+    <section class="card">
+      <h1>orcamento-ai</h1>
+      <span class="hidden">Processar orÃ§amento</span>
+      <p class="subtitle">
+        Interface de importacao tecnica para preencher a planilha padrao de orcamento a partir de arquivos TXT.
+      </p>
+
+      {% if erro %}
+      <div class="alert alert-error">{{ erro }}</div>
+      {% endif %}
+
+      {% if sucesso %}
+      <div class="alert alert-success">{{ sucesso }}</div>
+      {% endif %}
+
+      <div id="frontend-error" class="alert alert-error hidden"></div>
+
+      <form action="/processar" method="post" enctype="multipart/form-data" id="upload-form" novalidate>
+        <div class="field">
+          <label for="arquivo_geral">Geral Pecas (.txt)</label>
+          <p class="field-help">Arquivo principal com dados base das pecas pre-moldadas.</p>
+          <input type="file" id="arquivo_geral" name="arquivo_geral" accept=".txt,text/plain">
+          <small class="file-name" id="arquivo_geral_nome">Nenhum arquivo selecionado.</small>
+        </div>
+
+        <div class="field">
+          <label for="arquivo_genericas">Pecas Genericas (.txt)</label>
+          <p class="field-help">Arquivo complementar de pecas genericas, quando houver.</p>
+          <input type="file" id="arquivo_genericas" name="arquivo_genericas" accept=".txt,text/plain">
+          <small class="file-name" id="arquivo_genericas_nome">Nenhum arquivo selecionado.</small>
+        </div>
+
+        <div class="field">
+          <label for="arquivo_alveolares">Pecas Alveolares (.txt)</label>
+          <p class="field-help">Arquivo complementar de pecas alveolares, quando houver.</p>
+          <input type="file" id="arquivo_alveolares" name="arquivo_alveolares" accept=".txt,text/plain">
+          <small class="file-name" id="arquivo_alveolares_nome">Nenhum arquivo selecionado.</small>
+        </div>
+
+        <button type="submit" id="submit-btn">Processar orcamento</button>
+        <p class="hint">Envie 1, 2 ou 3 arquivos TXT e aguarde o processamento.</p>
+      </form>
+    </section>
+  </main>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

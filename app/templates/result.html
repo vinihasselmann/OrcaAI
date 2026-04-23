@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resultado | orcamento-ai</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <main class="container">
+    <section class="card">
+      {% if sucesso %}
+      <div class="status status-success">Sucesso</div>
+      <span class="hidden">ImportaÃ§Ã£o concluÃ­da</span>
+      <h1>Importacao concluida</h1>
+      <p class="subtitle">Seu arquivo de orcamento foi gerado com sucesso.</p>
+      {% else %}
+      <div class="status status-error">Erro</div>
+      <h1>Falha no processamento</h1>
+      <p class="subtitle">Nao foi possivel concluir a importacao com seguranca.</p>
+      {% endif %}
+
+      {% if erro %}
+      <div class="alert alert-error">{{ erro }}</div>
+      {% endif %}
+
+      <div class="result-grid">
+        <div class="result-item">
+          <span class="label">Arquivo gerado</span>
+          <strong>{{ nome_arquivo or "-" }}</strong>
+        </div>
+        <div class="result-item">
+          <span class="label">Arquivos processados</span>
+          <strong>{{ total_arquivos }}</strong>
+        </div>
+        <div class="result-item">
+          <span class="label">Registros importados</span>
+          <strong>{{ total_registros }}</strong>
+        </div>
+        <div class="result-item">
+          <span class="label">Linhas escritas</span>
+          <strong>{{ linhas_inseridas }}</strong>
+        </div>
+        <div class="result-item">
+          <span class="label">Celulas escritas</span>
+          <strong>{{ celulas_escritas }}</strong>
+        </div>
+        <div class="result-item">
+          <span class="label">Erros de escrita</span>
+          <strong>{{ total_erros_escrita }}</strong>
+        </div>
+      </div>
+
+      <div class="actions">
+        {% if sucesso and nome_arquivo %}
+        <a class="btn" href="/download/{{ nome_arquivo }}">Baixar planilha gerada</a>
+        {% endif %}
+        <a class="btn btn-secondary" href="/">Voltar para importacao</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
