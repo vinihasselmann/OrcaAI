@@ -6,6 +6,7 @@
 
   const inputs = [
     document.getElementById("arquivo_geral"),
+    document.getElementById("arquivo_auxiliares"),
     document.getElementById("arquivo_genericas"),
     document.getElementById("arquivo_alveolares"),
   ].filter(Boolean);
@@ -53,4 +54,3 @@
     btn.textContent = "Processando...";
   });
 })();
-

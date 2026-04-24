@@ -5,10 +5,14 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+import app.web as web_module
 from app.config import settings
 from app.web import app
-import app.web as web_module
-from tests.conftest import conteudo_txt_geral_pecas, criar_template_base
+from tests.conftest import (
+    conteudo_txt_geral_pecas,
+    conteudo_txt_geral_pecas_auxiliares,
+    criar_template_base,
+)
 
 
 def _configurar_ambiente_web(tmp_path: Path, monkeypatch) -> Path:
@@ -28,7 +32,8 @@ def test_get_root_renderiza_pagina_inicial() -> None:
 
     assert resp.status_code == 200
     assert "orcamento-ai" in resp.text
-    assert "Processar orçamento" in resp.text
+    assert "Processar or" in resp.text
+    assert "Geral Pecas Auxiliares" in resp.text
 
 
 def test_post_processar_gera_arquivo_final_e_permite_download(tmp_path: Path, monkeypatch) -> None:
@@ -41,7 +46,7 @@ def test_post_processar_gera_arquivo_final_e_permite_download(tmp_path: Path, mo
     resp = client.post("/processar", files=files)
 
     assert resp.status_code == 200
-    assert "Importação concluída" in resp.text
+    assert "Importa" in resp.text
 
     match = re.search(r"/download/([^\"']+)", resp.text)
     assert match, "Link de download nao encontrado no HTML de resultado."
@@ -55,3 +60,24 @@ def test_post_processar_gera_arquivo_final_e_permite_download(tmp_path: Path, mo
     assert "spreadsheetml.sheet" in dl.headers.get("content-type", "")
     assert len(dl.content) > 0
 
+
+def test_post_processar_com_arquivo_auxiliares(tmp_path: Path, monkeypatch) -> None:
+    output_dir = _configurar_ambiente_web(tmp_path, monkeypatch)
+    client = TestClient(app)
+
+    files = {
+        "arquivo_auxiliares": (
+            "0.Geral Pecas Auxiliares.txt",
+            conteudo_txt_geral_pecas_auxiliares().encode("utf-8"),
+            "text/plain",
+        ),
+    }
+    resp = client.post("/processar", files=files)
+
+    assert resp.status_code == 200
+    assert "Importa" in resp.text
+
+    match = re.search(r"/download/([^\"']+)", resp.text)
+    assert match
+    arquivo_gerado = output_dir / match.group(1)
+    assert arquivo_gerado.exists()

@@ -10,6 +10,7 @@ from app.services.field_mapper import ABA_PRINCIPAL, COLUNAS_ZERO_FIXO, MAPPING_
 
 TIPOS_SUPORTADOS = (
     "geral_pecas",
+    "geral_pecas_auxiliares",
     "geral_pecas_genericas",
     "geral_pecas_alveolares",
 )
@@ -47,7 +48,7 @@ FIELDS_NAO_NEGATIVOS = {
     "volume_total_m3",
 }
 
-COLUNAS_IDENTIFICACAO = {"J", "K", "L"}
+COLUNAS_IDENTIFICACAO = {"B", "J", "K", "L"}
 
 
 def _as_dict(obj: Any) -> dict[str, Any]:
@@ -82,7 +83,7 @@ def _campos_mapeados_por_tipo(tipo_arquivo: str) -> set[str]:
 
 def _colunas_permitidas() -> set[str]:
     """Conjunto de colunas permitidas no MVP."""
-    cols: set[str] = {"J", "K", "L", "M", "N", "P", "Q", "S", "V", "W", "X", "Y"}
+    cols: set[str] = {"B", "J", "K", "L", "M", "N", "P", "Q", "S", "V", "W", "X", "Y"}
     cols.update(COLUNAS_ZERO_FIXO)
     for regra in MAPPING_RULES.values():
         for col in regra.get("mapeamento_colunas", {}).values():

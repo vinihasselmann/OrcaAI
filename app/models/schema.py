@@ -127,6 +127,7 @@ class PecaGenerica(BasePeca):
     """Schema para registros do tipo `geral_pecas_genericas`."""
 
     largura_preo_m: float | None = None
+    altura_preo_m: float | None = None
     espessura_equivalente_cm: float | None = None
     taxa_ca_kg_m3: float | None = None
     taxa_cp_kg_m3: float | None = None
@@ -136,6 +137,7 @@ class PecaGenerica(BasePeca):
 
     @field_validator(
         "largura_preo_m",
+        "altura_preo_m",
         "espessura_equivalente_cm",
         "taxa_ca_kg_m3",
         "taxa_cp_kg_m3",

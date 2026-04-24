@@ -45,7 +45,7 @@ class ResultadoEscrita:
 
 def _obter_colunas_permitidas() -> set[str]:
     """Retorna conjunto de colunas permitidas para escrita na aba principal."""
-    base = {"J", "K", "L", "M", "N", "P", "Q", "S", "V", "W", "X", "Y"}
+    base = {"B", "J", "K", "L", "M", "N", "P", "Q", "S", "V", "W", "X", "Y"}
     complementos: set[str] = set()
     complementos.update(COLUNAS_ZERO_FIXO)
     for regra in MAPPING_RULES.values():

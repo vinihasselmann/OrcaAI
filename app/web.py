@@ -69,9 +69,11 @@ async def pagina_inicial(request: Request) -> HTMLResponse:
 async def processar_importacao(
     request: Request,
     arquivo_geral: UploadFile | None = File(default=None),
+    arquivo_auxiliares: UploadFile | None = File(default=None),
     arquivo_genericas: UploadFile | None = File(default=None),
     arquivo_alveolares: UploadFile | None = File(default=None),
     geral_pecas: UploadFile | None = File(default=None),
+    pecas_auxiliares: UploadFile | None = File(default=None),
     pecas_genericas: UploadFile | None = File(default=None),
     pecas_alveolares: UploadFile | None = File(default=None),
 ) -> HTMLResponse:
@@ -79,6 +81,7 @@ async def processar_importacao(
     # Suporte aos nomes novos (arquivo_*) e antigos (*pecas), sem quebrar contratos.
     uploads = [
         arquivo_geral or geral_pecas,
+        arquivo_auxiliares or pecas_auxiliares,
         arquivo_genericas or pecas_genericas,
         arquivo_alveolares or pecas_alveolares,
     ]

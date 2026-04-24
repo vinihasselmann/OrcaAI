@@ -5,6 +5,7 @@ from pathlib import Path
 from app.services.txt_parser import parsear_documento
 from tests.conftest import (
     conteudo_txt_geral_pecas,
+    conteudo_txt_geral_pecas_auxiliares,
     conteudo_txt_geral_pecas_alveolares,
     conteudo_txt_geral_pecas_genericas,
 )
@@ -32,9 +33,22 @@ def test_parser_geral_pecas_genericas(tmp_path: Path) -> None:
 
     assert doc.tipo_arquivo == "geral_pecas_genericas"
     assert len(doc.registros) == 1
+    assert doc.registros[0].largura_preo_m == 0.3
+    assert doc.registros[0].altura_preo_m == 0.55
     assert doc.registros[0].espessura_equivalente_cm == 12.5
     # Deve permanecer texto tecnico.
     assert doc.registros[0].distribuicao_cabos == "653  ...  1006,99"
+
+
+def test_parser_geral_pecas_auxiliares(tmp_path: Path) -> None:
+    arquivo = _gravar(tmp_path, "geral_pecas_auxiliares.txt", conteudo_txt_geral_pecas_auxiliares())
+    doc = parsear_documento(arquivo)
+
+    assert doc.tipo_arquivo == "geral_pecas_auxiliares"
+    assert len(doc.registros) == 2
+    assert doc.registros[0].material == "Pré-moldado"
+    assert doc.registros[0].quantidade == 32.0
+    assert doc.registros[1].volume_total_m3 == 1.008
 
 
 def test_parser_geral_pecas_alveolares(tmp_path: Path) -> None:
@@ -45,4 +59,3 @@ def test_parser_geral_pecas_alveolares(tmp_path: Path) -> None:
     assert len(doc.registros) == 1
     assert doc.registros[0].variacao_comprimento_cm == "10 a 15"
     assert doc.registros[0].comprimento_maximo_m == 14.0
-

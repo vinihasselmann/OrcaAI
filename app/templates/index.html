@@ -34,6 +34,13 @@
         </div>
 
         <div class="field">
+          <label for="arquivo_auxiliares">Geral Pecas Auxiliares (.txt)</label>
+          <p class="field-help">Arquivo complementar com pecas auxiliares, quando houver.</p>
+          <input type="file" id="arquivo_auxiliares" name="arquivo_auxiliares" accept=".txt,text/plain">
+          <small class="file-name" id="arquivo_auxiliares_nome">Nenhum arquivo selecionado.</small>
+        </div>
+
+        <div class="field">
           <label for="arquivo_genericas">Pecas Genericas (.txt)</label>
           <p class="field-help">Arquivo complementar de pecas genericas, quando houver.</p>
           <input type="file" id="arquivo_genericas" name="arquivo_genericas" accept=".txt,text/plain">
@@ -48,7 +55,7 @@
         </div>
 
         <button type="submit" id="submit-btn">Processar orcamento</button>
-        <p class="hint">Envie 1, 2 ou 3 arquivos TXT e aguarde o processamento.</p>
+        <p class="hint">Envie de 1 a 4 arquivos TXT e aguarde o processamento.</p>
       </form>
     </section>
   </main>

@@ -12,6 +12,7 @@ def criar_template_base(caminho: Path) -> Path:
     ws.title = "2A. Lista de Peças"
 
     # Cabecalhos-base usados pelo sistema.
+    ws["B1"] = "quadrante_montagem"
     ws["J1"] = "codigo_montagem"
     ws["K1"] = "modelo"
     ws["L1"] = "marca_tipo"
@@ -50,12 +51,25 @@ def conteudo_txt_geral_pecas() -> str:
     )
 
 
+def conteudo_txt_geral_pecas_auxiliares() -> str:
+    return "\n".join(
+        [
+            "0.Geral Peças Auxiliares;;;;;;;;;;;;",
+            "PEÇA-Material;PEÇA-Quadrante de Montagem;Código de montagem;Modelo;Marca de Tipo;PEÇA-Largura Preo (m);PEÇA-Altura Preo (m);TAXA-CA (kg/m³);TAXA-CP (kg/m³);Contagem;PEÇA-Comprimento Total (m);PEÇA-Área Total (m²);PEÇA-Volume Total (m³)",
+            ";;;;;;;;;;;;",
+            "Pré-moldado;CONCESSIONÁRIA;CP;I;CP01;0,4;0,65;200;0;32;120,8;78,52;1,008",
+            "Pré-moldado;CONCESSIONÁRIA;CP;I;CP02;0,4;0,9;400;0;24;241,8;217,62;1,008",
+            "Total geral: 28;;;;;;;;;56;362,61;296,15;2,016",
+        ]
+    )
+
+
 def conteudo_txt_geral_pecas_genericas() -> str:
     return "\n".join(
         [
             "Relatorio Geral Pecas Genericas",
-            "codigo_montagem;modelo;marca_tipo;espessura_equivalente_cm;distribuicao_cabos;taxa_ca_kg_m3;taxa_cp_kg_m3;laje_vao_m;volume_preenchimento_alveolo_m3;quantidade;comprimento_total_m;area_total_m2;volume_total_m3",
-            "CM-G-001;MOD-G;TIPO-G;12,5;653  ...  1006,99;110,0;75,0;6,0;0,45;3;18,0;6,0;2,2",
+            "codigo_montagem;modelo;marca_tipo;largura_preo_m;altura_preo_m;espessura_equivalente_cm;distribuicao_cabos;taxa_ca_kg_m3;taxa_cp_kg_m3;laje_vao_m;volume_preenchimento_alveolo_m3;quantidade;comprimento_total_m;area_total_m2;volume_total_m3",
+            "CM-G-001;MOD-G;TIPO-G;0,30;0,55;12,5;653  ...  1006,99;110,0;75,0;6,0;0,45;3;18,0;6,0;2,2",
         ]
     )
 
@@ -68,4 +82,3 @@ def conteudo_txt_geral_pecas_alveolares() -> str:
             "CM-A-001;MOD-A;TIPO-A;10 a 15;100,0;70,0;14,0;4;56,0;14,0;5,0",
         ]
     )
-

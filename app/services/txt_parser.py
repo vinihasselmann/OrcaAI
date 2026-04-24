@@ -27,18 +27,25 @@ logger = logging.getLogger(__name__)
 
 TIPOS_SUPORTADOS = (
     "geral_pecas",
+    "geral_pecas_auxiliares",
     "geral_pecas_genericas",
     "geral_pecas_alveolares",
 )
 
 MODEL_BY_TIPO = {
     "geral_pecas": PecaGeral,
+    "geral_pecas_auxiliares": PecaGeral,
     "geral_pecas_genericas": PecaGenerica,
     "geral_pecas_alveolares": PecaAlveolar,
 }
 
 # Campos que devem permanecer texto, mesmo quando o valor parece numerico.
 CAMPOS_SEMPRE_TEXTO = {
+    "material",
+    "quadrante_montagem",
+    "codigo_montagem",
+    "modelo",
+    "marca_tipo",
     "distribuicao_cabos",
     "continuidade_bitola",
     "condutor_pluvial_diametro",
@@ -103,7 +110,42 @@ HEADER_ALIAS_BY_TIPO: dict[str, dict[str, str]] = {
         "continuidadade_bitola": "continuidade_bitola",
         "condutor_pluvial": "condutor_pluvial_diametro",
     },
-        "geral_pecas_genericas": {
+    "geral_pecas_auxiliares": {
+        "arquivo_origem": "arquivo_origem",
+        "tipo_arquivo": "tipo_arquivo",
+        "material": "material",
+        "peca_material": "material",
+        "quadrante_montagem": "quadrante_montagem",
+        "peca_quadrante_de_montagem": "quadrante_montagem",
+        "codigo_montagem": "codigo_montagem",
+        "codigo_de_montagem": "codigo_montagem",
+        "modelo": "modelo",
+        "marca_tipo": "marca_tipo",
+        "marca_de_tipo": "marca_tipo",
+        "quantidade": "quantidade",
+        "peca_quantidade": "quantidade",
+        "contagem": "quantidade",
+        "comprimento_total_m": "comprimento_total_m",
+        "peca_comprimento_total_m": "comprimento_total_m",
+        "area_total_m2": "area_total_m2",
+        "peca_area_total_m2": "area_total_m2",
+        "volume_total_m3": "volume_total_m3",
+        "peca_volume_total_m3": "volume_total_m3",
+        "largura_preo_m": "largura_preo_m",
+        "peca_largura_preo_m": "largura_preo_m",
+        "altura_preo_m": "altura_preo_m",
+        "peca_altura_preo_m": "altura_preo_m",
+        "taxa_ca_kg_m3": "taxa_ca_kg_m3",
+        "taxa_cp_kg_m3": "taxa_cp_kg_m3",
+        "largura_preo": "largura_preo_m",
+        "altura_preo": "altura_preo_m",
+        "comprimento_total": "comprimento_total_m",
+        "area_total": "area_total_m2",
+        "volume_total": "volume_total_m3",
+        "taxa_ca": "taxa_ca_kg_m3",
+        "taxa_cp": "taxa_cp_kg_m3",
+    },
+    "geral_pecas_genericas": {
             "arquivo_origem": "arquivo_origem",
             "tipo_arquivo": "tipo_arquivo",
             "material": "material",
@@ -125,6 +167,8 @@ HEADER_ALIAS_BY_TIPO: dict[str, dict[str, str]] = {
             "peca_volume_total_m3": "volume_total_m3",
             "largura_preo_m": "largura_preo_m",
             "peca_largura_preo_m": "largura_preo_m",
+            "altura_preo_m": "altura_preo_m",
+            "peca_altura_preo_m": "altura_preo_m",
             "espessura_equivalente_cm": "espessura_equivalente_cm",
             "taxa_ca_kg_m3": "taxa_ca_kg_m3",
             "taxa_cp_kg_m3": "taxa_cp_kg_m3",
@@ -133,6 +177,7 @@ HEADER_ALIAS_BY_TIPO: dict[str, dict[str, str]] = {
         "volume_preenchimento_alveolo_m3": "volume_preenchimento_alveolo_m3",
         # Variacoes comuns
         "largura_preo": "largura_preo_m",
+        "altura_preo": "altura_preo_m",
         "espessura_equivalente": "espessura_equivalente_cm",
         "taxa_ca": "taxa_ca_kg_m3",
         "taxa_cp": "taxa_cp_kg_m3",
@@ -187,6 +232,13 @@ TOKENS_UNICOS_POR_TIPO: dict[str, set[str]] = {
     "geral_pecas_alveolares": {
         "variacao_comprimento_cm",
     },
+}
+
+TITLE_HINTS_BY_TIPO: dict[str, tuple[str, ...]] = {
+    "geral_pecas_auxiliares": ("geral_pecas_auxiliares",),
+    "geral_pecas_genericas": ("geral_pecas_genericas",),
+    "geral_pecas_alveolares": ("geral_pecas_alveolares",),
+    "geral_pecas": ("geral_pecas",),
 }
 
 NUMERO_REGEX = re.compile(r"^[+-]?(?:(?:\d{1,3}(?:\.\d{3})+)|\d+)(?:[.,]\d+)?$")
@@ -302,6 +354,12 @@ def extrair_cabecalhos(linhas: list[str]) -> list[str]:
 
 def detectar_tipo_arquivo(linhas: list[str]) -> str:
     """Detecta o tipo do arquivo com base em cabecalhos tecnicos conhecidos."""
+    titulo_norm = _normalizar_chave(linhas[0]) if linhas else ""
+    for tipo, hints in TITLE_HINTS_BY_TIPO.items():
+        if any(hint in titulo_norm for hint in hints):
+            logger.info("Tipo detectado pelo titulo: %s", tipo)
+            return tipo
+
     cabecalhos = extrair_cabecalhos(linhas)
     cabecalhos_norm = {_normalizar_chave(c) for c in cabecalhos}
 
@@ -411,6 +469,24 @@ def _mapear_dados_para_modelo(
     return dados
 
 
+def _aplicar_mapeamento_posicional_por_tipo(
+    tipo_arquivo: str,
+    linha: str,
+    dados_modelo: dict[str, Any],
+) -> dict[str, Any]:
+    """Aplica mapeamentos por posicao fixa quando o layout exigir."""
+    dados = dict(dados_modelo)
+    valores = [col.strip() for col in _split_linha_tabular(linha)]
+
+    if tipo_arquivo == "geral_pecas_genericas":
+        if len(valores) > 5 and not dados.get("largura_preo_m"):
+            dados["largura_preo_m"] = normalizar_valor(valores[5])
+        if len(valores) > 6 and not dados.get("altura_preo_m"):
+            dados["altura_preo_m"] = normalizar_valor(valores[6])
+
+    return dados
+
+
 def parsear_registros(
     linhas: list[str],
     cabecalhos: list[str],
@@ -448,6 +524,11 @@ def parsear_registros(
                 tipo_arquivo=tipo_arquivo,
                 arquivo_origem=arquivo_origem,
                 registro_bruto=registro_bruto,
+            )
+            dados_modelo = _aplicar_mapeamento_posicional_por_tipo(
+                tipo_arquivo=tipo_arquivo,
+                linha=linha,
+                dados_modelo=dados_modelo,
             )
             registros.append(model_cls(**dados_modelo))
         except Exception as exc:  # pragma: no cover - branch de protecao

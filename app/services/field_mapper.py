@@ -9,6 +9,7 @@ from app.models.schema import DocumentoImportado, MapeamentoExcel
 
 TIPOS_SUPORTADOS = (
     "geral_pecas",
+    "geral_pecas_auxiliares",
     "geral_pecas_genericas",
     "geral_pecas_alveolares",
 )
@@ -37,6 +38,16 @@ class FieldMapperError(Exception):
     """Erro de mapeamento entre registro importado e planilha Excel."""
 
 
+ALTURA_PREO_ALVEOLAR_POR_MODELO: tuple[tuple[tuple[str, ...], float], ...] = (
+    (("LA15", "LP15"), 0.1),
+    (("LA20", "LP20"), 0.115),
+    (("LA26,5", "LP26,5", "LA26.5", "LP26.5"), 0.15),
+    (("LA32", "LP32"), 0.167),
+    (("LA40", "LP40"), 0.19),
+    (("LA50", "LP50"), 0.264),
+)
+
+
 # Regras em tipos primitivos para facilitar migracao futura para JSON/YAML.
 MAPPING_RULES: dict[str, dict[str, Any]] = {
     "geral_pecas": {
@@ -45,6 +56,7 @@ MAPPING_RULES: dict[str, dict[str, Any]] = {
         "chave_busca_linha": ["codigo_montagem", "modelo", "marca_tipo"],
         "mapeamento_colunas": {
             # Colunas base (solicitadas)
+            "quadrante_montagem": "B",
             "codigo_montagem": "J",
             "modelo": "K",
             "marca_tipo": "L",
@@ -67,15 +79,36 @@ MAPPING_RULES: dict[str, dict[str, Any]] = {
             "condutor_pluvial_diametro": "AH",
         },
     },
+    "geral_pecas_auxiliares": {
+        "aba_destino": ABA_PRINCIPAL,
+        "modo_escrita": MODO_APPEND_SEGURO,
+        "chave_busca_linha": ["codigo_montagem", "modelo", "marca_tipo"],
+        "mapeamento_colunas": {
+            "quadrante_montagem": "B",
+            "codigo_montagem": "J",
+            "modelo": "K",
+            "marca_tipo": "L",
+            "largura_preo_m": "M",
+            "altura_preo_m": "N",
+            "taxa_ca_kg_m3": "P",
+            "taxa_cp_kg_m3": "Q",
+            "quantidade": "V",
+            "comprimento_total_m": "W",
+            "area_total_m2": "X",
+            "volume_total_m3": "Y",
+        },
+    },
     "geral_pecas_genericas": {
         "aba_destino": ABA_PRINCIPAL,
         "modo_escrita": MODO_APPEND_SEGURO,
         "chave_busca_linha": ["codigo_montagem", "modelo", "marca_tipo"],
         "mapeamento_colunas": {
+            "quadrante_montagem": "B",
             "codigo_montagem": "J",
             "modelo": "K",
             "marca_tipo": "L",
             "largura_preo_m": "M",
+            "altura_preo_m": "N",
             "taxa_ca_kg_m3": "P",
             "taxa_cp_kg_m3": "Q",
             "laje_vao_m": "S",
@@ -94,6 +127,7 @@ MAPPING_RULES: dict[str, dict[str, Any]] = {
         "modo_escrita": MODO_APPEND_SEGURO,
         "chave_busca_linha": ["codigo_montagem", "modelo", "marca_tipo"],
         "mapeamento_colunas": {
+            "quadrante_montagem": "B",
             "codigo_montagem": "J",
             "modelo": "K",
             "marca_tipo": "L",
@@ -203,6 +237,30 @@ def _aplicar_colunas_zero_fixo(
     return resultado
 
 
+def _aplicar_regras_condicionais_por_tipo(
+    registro: Any,
+    regras: dict[str, Any],
+) -> list[tuple[str, str | float | int | None, str]]:
+    """Retorna instrucoes condicionais extras de escrita por tipo."""
+    dados = _as_dict(registro)
+    tipo_arquivo = str(dados.get("tipo_arquivo") or "").strip().lower()
+    codigo_montagem = str(dados.get("codigo_montagem") or "").strip().upper()
+    modelo = str(dados.get("modelo") or "").strip().upper().replace(" ", "")
+    instrucoes: list[tuple[str, str | float | int | None, str]] = []
+
+    if tipo_arquivo == "geral_pecas_auxiliares" and codigo_montagem == "CP":
+        instrucoes.append(("S", 12, "comprimento_maximo_auxiliar_cp"))
+
+    if tipo_arquivo == "geral_pecas_alveolares":
+        instrucoes.append(("M", 1.25, "largura_preo_alveolar_padrao"))
+        for marcadores, altura in ALTURA_PREO_ALVEOLAR_POR_MODELO:
+            if any(marcador in modelo for marcador in marcadores):
+                instrucoes.append(("N", altura, "altura_preo_alveolar_por_modelo"))
+                break
+
+    return instrucoes
+
+
 def gerar_proxima_linha_disponivel(
     contexto_planilha: dict[str, Any],
     aba_destino: str = ABA_PRINCIPAL,
@@ -294,6 +352,20 @@ def mapear_registro_para_excel(
             # Nao gera instrucoes para campo sem valor.
             continue
 
+        instrucoes.append(
+            MapeamentoExcel(
+                aba_destino=aba_destino,
+                linha_destino=linha_destino,
+                coluna_destino=coluna,
+                celula_destino=f"{coluna}{linha_destino}",
+                campo_origem=campo_origem,
+                valor_convertido=valor,
+                identificador_registro=identificador,
+                permitido_escrever=True,
+            )
+        )
+
+    for coluna, valor, campo_origem in _aplicar_regras_condicionais_por_tipo(registro, regras):
         instrucoes.append(
             MapeamentoExcel(
                 aba_destino=aba_destino,

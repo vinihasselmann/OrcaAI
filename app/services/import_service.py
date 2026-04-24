@@ -44,10 +44,10 @@ def processar_uploads_web(
             nome_arquivo_gerado=None,
             resumo=None,
         )
-    if len(uploads_validos) > 3:
+    if len(uploads_validos) > 4:
         return ImportServiceResult(
             sucesso=False,
-            erros=["Envie no maximo 3 arquivos .txt por processamento."],
+            erros=["Envie no maximo 4 arquivos .txt por processamento."],
             nome_arquivo_gerado=None,
             resumo=None,
         )
