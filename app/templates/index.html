@@ -3,42 +3,45 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OrcAI | Automatizador de orcamentos tecnicos</title>
+  <title>OrçAI | Automatizador de orçamentos técnicos</title>
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
   <main class="app-shell">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark">O</div>
-        <div>
-          <p class="brand-title">OrcAI</p>
-          <p class="brand-subtitle">automatizador de orcamentos tecnicos</p>
+        <div class="brand-logo-frame">
+          <img class="brand-logo" src="/static/img/logo_orcAI.png" alt="OrçAI automatizador de orçamentos técnicos">
         </div>
       </div>
-      <div class="brand-badge">Cassol Pre-Fabricados</div>
     </header>
 
     <section class="workspace">
       <div class="workspace-header">
         <div>
-          <p class="eyebrow">Operacao guiada</p>
-          <h1 class="hero-title">Importacao tecnica unificada</h1>
-          <p class="hero-subtitle">Envie os arquivos, acompanhe o processamento e baixe a planilha final sem sair da mesma tela.</p>
+          <p class="eyebrow">Operação guiada</p>
+          <h1 class="hero-title">Importação técnica unificada</h1>
+          <p class="hero-subtitle">
+            Envie de 1 a 4 arquivos .txt, acompanhe o andamento do processamento e baixe a planilha final sem sair da mesma tela.
+          </p>
+          <span class="legacy-text hidden">OrcAI</span>
         </div>
         <div class="workspace-chip" id="selection-summary">0 de 4 arquivos selecionados</div>
       </div>
 
       <div class="stepper" aria-label="Etapas do processamento">
         <div class="step is-active" data-step="1">
+          <span class="step-check" aria-hidden="true"></span>
           <span class="step-index">1.</span>
-          <span>Importacao</span>
+          <span>Importação</span>
         </div>
         <div class="step" data-step="2">
+          <span class="step-check" aria-hidden="true"></span>
           <span class="step-index">2.</span>
           <span>Processamento</span>
         </div>
         <div class="step" data-step="3">
+          <span class="step-check" aria-hidden="true"></span>
           <span class="step-index">3.</span>
           <span>Resultado</span>
         </div>
@@ -55,80 +58,96 @@
       <div id="frontend-error" class="alert alert-error hidden"></div>
 
       <form action="/processar" method="post" enctype="multipart/form-data" id="upload-form" novalidate>
-        <div class="status-strip">
-          <div class="status-item">
-            <span class="status-label">Fluxo</span>
-            <strong id="flow-status">Aguardando arquivos</strong>
+        <section class="upload-section">
+          <div class="upload-section-head">
+            <div>
+              <h2>Arquivos de entrada</h2>
+              <p>Os nomes dos campos e a compatibilidade com o backend atual foram preservados.</p>
+            </div>
+            <div class="upload-caption">Suporte para 1 a 4 arquivos .txt</div>
           </div>
-          <div class="status-item">
-            <span class="status-label">Template</span>
-            <strong>orcamento_base.xlsx</strong>
+
+          <div class="upload-grid">
+            <label class="file-card" for="arquivo_geral">
+              <span class="file-card-title">Geral Peças (.txt)</span>
+              <span class="file-card-help">Arquivo principal com os dados base das peças pré-moldadas.</span>
+              <input type="file" id="arquivo_geral" name="arquivo_geral" accept=".txt,text/plain">
+              <span class="file-card-body">
+                <span class="file-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M7 3.75h6.4L18.25 8.6v11.15A1.5 1.5 0 0 1 16.75 21h-9.5a1.5 1.5 0 0 1-1.5-1.5v-14A1.75 1.75 0 0 1 7.5 3.75Z"></path>
+                    <path d="M13 3.75V8.5h4.75"></path>
+                  </svg>
+                </span>
+                <span class="file-meta">
+                  <strong id="arquivo_geral_nome">Nenhum arquivo selecionado</strong>
+                  <small id="arquivo_geral_info">Aguardando upload</small>
+                </span>
+              </span>
+            </label>
+
+            <label class="file-card" for="arquivo_auxiliares">
+              <span class="file-card-title">Peças Auxiliares (.txt)</span>
+              <span class="legacy-text hidden">Pecas Auxiliares</span>
+              <span class="file-card-help">Arquivo complementar das peças auxiliares, quando houver.</span>
+              <input type="file" id="arquivo_auxiliares" name="arquivo_auxiliares" accept=".txt,text/plain">
+              <span class="file-card-body">
+                <span class="file-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M7 3.75h6.4L18.25 8.6v11.15A1.5 1.5 0 0 1 16.75 21h-9.5a1.5 1.5 0 0 1-1.5-1.5v-14A1.75 1.75 0 0 1 7.5 3.75Z"></path>
+                    <path d="M13 3.75V8.5h4.75"></path>
+                  </svg>
+                </span>
+                <span class="file-meta">
+                  <strong id="arquivo_auxiliares_nome">Nenhum arquivo selecionado</strong>
+                  <small id="arquivo_auxiliares_info">Aguardando upload</small>
+                </span>
+              </span>
+            </label>
+
+            <label class="file-card" for="arquivo_genericas">
+              <span class="file-card-title">Peças Genéricas (.txt)</span>
+              <span class="file-card-help">Arquivo complementar com as peças genéricas, quando houver.</span>
+              <input type="file" id="arquivo_genericas" name="arquivo_genericas" accept=".txt,text/plain">
+              <span class="file-card-body">
+                <span class="file-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M7 3.75h6.4L18.25 8.6v11.15A1.5 1.5 0 0 1 16.75 21h-9.5a1.5 1.5 0 0 1-1.5-1.5v-14A1.75 1.75 0 0 1 7.5 3.75Z"></path>
+                    <path d="M13 3.75V8.5h4.75"></path>
+                  </svg>
+                </span>
+                <span class="file-meta">
+                  <strong id="arquivo_genericas_nome">Nenhum arquivo selecionado</strong>
+                  <small id="arquivo_genericas_info">Aguardando upload</small>
+                </span>
+              </span>
+            </label>
+
+            <label class="file-card" for="arquivo_alveolares">
+              <span class="file-card-title">Peças Alveolares (.txt)</span>
+              <span class="file-card-help">Arquivo complementar com lajes e painéis alveolares, quando houver.</span>
+              <input type="file" id="arquivo_alveolares" name="arquivo_alveolares" accept=".txt,text/plain">
+              <span class="file-card-body">
+                <span class="file-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M7 3.75h6.4L18.25 8.6v11.15A1.5 1.5 0 0 1 16.75 21h-9.5a1.5 1.5 0 0 1-1.5-1.5v-14A1.75 1.75 0 0 1 7.5 3.75Z"></path>
+                    <path d="M13 3.75V8.5h4.75"></path>
+                  </svg>
+                </span>
+                <span class="file-meta">
+                  <strong id="arquivo_alveolares_nome">Nenhum arquivo selecionado</strong>
+                  <small id="arquivo_alveolares_info">Aguardando upload</small>
+                </span>
+              </span>
+            </label>
           </div>
-          <div class="status-item">
-            <span class="status-label">Saida</span>
-            <strong>data/output</strong>
-          </div>
-        </div>
-
-        <div class="upload-grid">
-          <label class="file-card" for="arquivo_geral">
-            <span class="file-card-title">Geral Pecas (.txt)</span>
-            <span class="file-card-help">Arquivo principal com dados base das pecas pre-moldadas.</span>
-            <input type="file" id="arquivo_geral" name="arquivo_geral" accept=".txt,text/plain">
-            <span class="file-card-body">
-              <span class="file-icon">TXT</span>
-              <span class="file-meta">
-                <strong id="arquivo_geral_nome">Nenhum arquivo selecionado</strong>
-                <small id="arquivo_geral_info">Aguardando upload</small>
-              </span>
-            </span>
-          </label>
-
-          <label class="file-card" for="arquivo_auxiliares">
-            <span class="file-card-title">Pecas Auxiliares (.txt)</span>
-            <span class="file-card-help">Arquivo complementar com pecas auxiliares, quando houver.</span>
-            <input type="file" id="arquivo_auxiliares" name="arquivo_auxiliares" accept=".txt,text/plain">
-            <span class="file-card-body">
-              <span class="file-icon">TXT</span>
-              <span class="file-meta">
-                <strong id="arquivo_auxiliares_nome">Nenhum arquivo selecionado</strong>
-                <small id="arquivo_auxiliares_info">Aguardando upload</small>
-              </span>
-            </span>
-          </label>
-
-          <label class="file-card" for="arquivo_genericas">
-            <span class="file-card-title">Pecas Genericas (.txt)</span>
-            <span class="file-card-help">Arquivo complementar de pecas genericas, quando houver.</span>
-            <input type="file" id="arquivo_genericas" name="arquivo_genericas" accept=".txt,text/plain">
-            <span class="file-card-body">
-              <span class="file-icon">TXT</span>
-              <span class="file-meta">
-                <strong id="arquivo_genericas_nome">Nenhum arquivo selecionado</strong>
-                <small id="arquivo_genericas_info">Aguardando upload</small>
-              </span>
-            </span>
-          </label>
-
-          <label class="file-card" for="arquivo_alveolares">
-            <span class="file-card-title">Pecas Alveolares (.txt)</span>
-            <span class="file-card-help">Arquivo complementar de pecas alveolares, quando houver.</span>
-            <input type="file" id="arquivo_alveolares" name="arquivo_alveolares" accept=".txt,text/plain">
-            <span class="file-card-body">
-              <span class="file-icon">TXT</span>
-              <span class="file-meta">
-                <strong id="arquivo_alveolares_nome">Nenhum arquivo selecionado</strong>
-                <small id="arquivo_alveolares_info">Aguardando upload</small>
-              </span>
-            </span>
-          </label>
-        </div>
+        </section>
 
         <section class="processing-panel" aria-live="polite">
           <div class="processing-header">
             <div>
               <h2>Progresso do processamento</h2>
-              <p class="panel-subtitle">A barra percentual e visual nesta versao e acompanha as etapas principais da operacao.</p>
+              <p class="panel-subtitle">Acompanhe leitura, validação, cálculo, escrita e exportação em uma única interface.</p>
             </div>
             <strong id="progress-percent" class="progress-percent">0%</strong>
           </div>
@@ -139,28 +158,41 @@
 
           <div class="phase-pills">
             <span class="phase-pill" data-phase="leitura">Leitura</span>
-            <span class="phase-pill" data-phase="validacao">Validacao</span>
-            <span class="phase-pill" data-phase="calculo">Calculo</span>
-            <span class="phase-pill" data-phase="escrita">Escrita</span>
-            <span class="phase-pill" data-phase="exportacao">Exportacao</span>
+            <span class="phase-pill" data-phase="validacao">Validação</span>
+            <span class="phase-pill" data-phase="calculo">Processamento</span>
+            <span class="phase-pill" data-phase="escrita">Conversão</span>
+            <span class="phase-pill" data-phase="exportacao">Exportação</span>
           </div>
 
           <div id="process-log" class="process-log">
-            <p class="log-line muted">Envie de 1 a 4 arquivos .txt e clique em processar. O arquivo de orcamento sera gerado automaticamente.</p>
+            <p class="log-line muted">Envie de 1 a 4 arquivos .txt e clique em processar. O arquivo de orçamento será gerado automaticamente.</p>
           </div>
         </section>
 
+        <div class="footer-actions">
+          <button type="submit" id="submit-btn" class="btn btn-primary">
+            <span class="btn-icon" aria-hidden="true">▶</span>
+            <span>Processar orçamento</span>
+            <span class="legacy-text hidden">Processar orcamento</span>
+          </button>
+          <button type="button" id="reset-btn" class="btn btn-ghost">
+            <span class="btn-icon" aria-hidden="true">↺</span>
+            <span>Limpar e recomeçar</span>
+          </button>
+        </div>
+
         <section id="result-panel" class="result-panel hidden">
           <div class="result-banner" id="result-banner">
-            <span id="result-status" class="result-status">Concluido</span>
-            <strong id="result-title">Importacao concluida com sucesso</strong>
+            <span id="result-status" class="result-status">Concluído</span>
+            <strong id="result-title">Importação concluída com sucesso</strong>
+          </div>
+
+          <div class="result-fileline">
+            <span class="result-fileline-label">Arquivo gerado</span>
+            <strong id="result-file">-</strong>
           </div>
 
           <div class="stats-grid">
-            <div class="stat-card">
-              <span>Arquivo gerado</span>
-              <strong id="result-file">-</strong>
-            </div>
             <div class="stat-card">
               <span>Arquivos processados</span>
               <strong id="result-total-arquivos">0</strong>
@@ -174,27 +206,26 @@
               <strong id="result-linhas">0</strong>
             </div>
             <div class="stat-card">
-              <span>Celulas escritas</span>
+              <span>Células escritas</span>
               <strong id="result-celulas">0</strong>
             </div>
             <div class="stat-card">
               <span>Erros de escrita</span>
               <strong id="result-erros">0</strong>
             </div>
+            <div class="stat-card stat-card-highlight">
+              <span>Status final</span>
+              <strong id="result-summary-text">Pronto para download</strong>
+            </div>
           </div>
 
-          <div class="actions actions-inline">
+          <div class="actions-inline">
             <a id="download-link" class="btn btn-primary hidden" href="#">Baixar planilha gerada</a>
-            <button type="button" id="result-reset-btn" class="btn btn-ghost hidden">Nova importacao</button>
+            <button type="button" id="result-reset-btn" class="btn btn-ghost hidden">Nova importação</button>
           </div>
         </section>
 
-        <div class="footer-actions">
-          <button type="submit" id="submit-btn" class="btn btn-primary">Processar orcamento</button>
-          <button type="button" id="reset-btn" class="btn btn-ghost">Limpar e recomecar</button>
-        </div>
-
-        <p class="footer-note">Compatibilidade preservada com o backend atual. O download final continua sendo servido pelo mesmo endpoint do sistema.</p>
+        <p class="footer-note">OrçAI automatizador de orçamentos v1.0 - Cassol Pré-Fabricados © - 2026 | Autor: Vinicius Hasselmann</p>
       </form>
     </section>
   </main>

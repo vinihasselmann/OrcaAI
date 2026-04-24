@@ -3,60 +3,109 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Resultado | orcamento-ai</title>
+  <title>Resultado | OrçAI</title>
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-  <main class="container">
-    <section class="card">
-      {% if sucesso %}
-      <div class="status status-success">Sucesso</div>
-      <span class="hidden">ImportaÃ§Ã£o concluÃ­da</span>
-      <h1>Importacao concluida</h1>
-      <p class="subtitle">Seu arquivo de orcamento foi gerado com sucesso.</p>
-      {% else %}
-      <div class="status status-error">Erro</div>
-      <h1>Falha no processamento</h1>
-      <p class="subtitle">Nao foi possivel concluir a importacao com seguranca.</p>
-      {% endif %}
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-logo-frame">
+          <img class="brand-logo" src="/static/img/logo_orcAI.png" alt="OrçAI automatizador de orçamentos técnicos">
+        </div>
+      </div>
+    </header>
+
+    <section class="workspace workspace-result">
+      <div class="workspace-header">
+        <div>
+          <p class="eyebrow">Resultado do processamento</p>
+          {% if sucesso %}
+          <h1 class="hero-title">Importação concluída</h1>
+          <p class="hero-subtitle">Os dados foram consolidados e a planilha final está pronta para download.</p>
+          {% else %}
+          <h1 class="hero-title">Falha no processamento</h1>
+          <p class="hero-subtitle">O app interrompeu a importação para evitar inconsistências na planilha de saída.</p>
+          {% endif %}
+        </div>
+        <div class="workspace-chip {% if sucesso %}workspace-chip-success{% else %}workspace-chip-error{% endif %}">
+          {% if sucesso %}Concluído{% else %}Erro{% endif %}
+        </div>
+      </div>
+
+      <div class="stepper" aria-label="Etapas do processamento">
+        <div class="step is-complete" data-step="1">
+          <span class="step-check" aria-hidden="true"></span>
+          <span class="step-index">1.</span>
+          <span>Importação</span>
+        </div>
+        <div class="step is-complete" data-step="2">
+          <span class="step-check" aria-hidden="true"></span>
+          <span class="step-index">2.</span>
+          <span>Processamento</span>
+        </div>
+        <div class="step is-active" data-step="3">
+          <span class="step-check" aria-hidden="true"></span>
+          <span class="step-index">3.</span>
+          <span>Resultado</span>
+        </div>
+      </div>
 
       {% if erro %}
       <div class="alert alert-error">{{ erro }}</div>
       {% endif %}
 
-      <div class="result-grid">
-        <div class="result-item">
-          <span class="label">Arquivo gerado</span>
+      <section class="result-panel result-panel-static">
+        <div class="result-banner {% if sucesso %}is-success{% else %}is-error{% endif %}">
+          <span class="result-status">{% if sucesso %}Concluído{% else %}Erro{% endif %}</span>
+          <strong>
+            {% if sucesso %}
+            Importação concluída com sucesso
+            {% else %}
+            Não foi possível concluir a importação
+            {% endif %}
+          </strong>
+        </div>
+
+        <div class="result-fileline">
+          <span class="result-fileline-label">Arquivo gerado</span>
           <strong>{{ nome_arquivo or "-" }}</strong>
         </div>
-        <div class="result-item">
-          <span class="label">Arquivos processados</span>
-          <strong>{{ total_arquivos }}</strong>
-        </div>
-        <div class="result-item">
-          <span class="label">Registros importados</span>
-          <strong>{{ total_registros }}</strong>
-        </div>
-        <div class="result-item">
-          <span class="label">Linhas escritas</span>
-          <strong>{{ linhas_inseridas }}</strong>
-        </div>
-        <div class="result-item">
-          <span class="label">Celulas escritas</span>
-          <strong>{{ celulas_escritas }}</strong>
-        </div>
-        <div class="result-item">
-          <span class="label">Erros de escrita</span>
-          <strong>{{ total_erros_escrita }}</strong>
-        </div>
-      </div>
 
-      <div class="actions">
-        {% if sucesso and nome_arquivo %}
-        <a class="btn" href="/download/{{ nome_arquivo }}">Baixar planilha gerada</a>
-        {% endif %}
-        <a class="btn btn-secondary" href="/">Voltar para importacao</a>
-      </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span>Arquivos processados</span>
+            <strong>{{ total_arquivos }}</strong>
+          </div>
+          <div class="stat-card">
+            <span>Registros importados</span>
+            <strong>{{ total_registros }}</strong>
+          </div>
+          <div class="stat-card">
+            <span>Linhas escritas</span>
+            <strong>{{ linhas_inseridas }}</strong>
+          </div>
+          <div class="stat-card">
+            <span>Células escritas</span>
+            <strong>{{ celulas_escritas }}</strong>
+          </div>
+          <div class="stat-card">
+            <span>Erros de escrita</span>
+            <strong>{{ total_erros_escrita }}</strong>
+          </div>
+          <div class="stat-card stat-card-highlight">
+            <span>Status final</span>
+            <strong>{% if sucesso %}Pronto para download{% else %}Revisar arquivos{% endif %}</strong>
+          </div>
+        </div>
+
+        <div class="actions-inline">
+          {% if sucesso and nome_arquivo %}
+          <a class="btn btn-primary" href="/download/{{ nome_arquivo }}">Baixar planilha gerada</a>
+          {% endif %}
+          <a class="btn btn-ghost" href="/">Voltar para importação</a>
+        </div>
+      </section>
     </section>
   </main>
 </body>

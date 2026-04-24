@@ -14,16 +14,17 @@
   const progressPercent = document.getElementById("progress-percent");
   const selectionSummary = document.getElementById("selection-summary");
   const flowStatus = document.getElementById("flow-status");
+  const resultSummaryText = document.getElementById("result-summary-text");
   const stepEls = Array.from(document.querySelectorAll(".step"));
   const phaseEls = Array.from(document.querySelectorAll(".phase-pill"));
 
   if (!form || !btn) return;
 
   const inputConfig = [
-    { id: "arquivo_geral", label: "Geral Pecas (.txt)" },
-    { id: "arquivo_auxiliares", label: "Pecas Auxiliares (.txt)" },
-    { id: "arquivo_genericas", label: "Pecas Genericas (.txt)" },
-    { id: "arquivo_alveolares", label: "Pecas Alveolares (.txt)" },
+    { id: "arquivo_geral", label: "Geral Peças (.txt)" },
+    { id: "arquivo_auxiliares", label: "Peças Auxiliares (.txt)" },
+    { id: "arquivo_genericas", label: "Peças Genéricas (.txt)" },
+    { id: "arquivo_alveolares", label: "Peças Alveolares (.txt)" },
   ];
 
   const inputs = inputConfig
@@ -36,15 +37,14 @@
     .filter((item) => item.input);
 
   const phases = [
-    { key: "leitura", label: "Leitura", progress: 16, log: "Lendo e preparando os arquivos enviados..." },
-    { key: "validacao", label: "Validacao", progress: 34, log: "Validando estrutura e campos obrigatorios..." },
-    { key: "calculo", label: "Calculo", progress: 56, log: "Aplicando regras de mapeamento e calculo..." },
-    { key: "escrita", label: "Escrita", progress: 78, log: "Escrevendo os dados na planilha base..." },
-    { key: "exportacao", label: "Exportacao", progress: 92, log: "Preparando a exportacao e o link final..." },
+    { key: "leitura", progress: 16, log: "Lendo e preparando os arquivos enviados..." },
+    { key: "validacao", progress: 34, log: "Validando estrutura e campos obrigatórios..." },
+    { key: "calculo", progress: 56, log: "Aplicando regras de mapeamento e cálculo..." },
+    { key: "escrita", progress: 78, log: "Escrevendo os dados na planilha base..." },
+    { key: "exportacao", progress: 92, log: "Preparando a exportação e o link final..." },
   ];
 
   let progressTimer = null;
-  let currentPhaseIndex = -1;
   let pollTimer = null;
 
   function formatFileSize(bytes) {
@@ -80,31 +80,28 @@
       el.classList.toggle("is-active", phaseIndex === index);
       el.classList.toggle("is-done", phaseIndex < index);
     });
-    currentPhaseIndex = index;
   }
 
   function addLog(message, { muted = false, tone = "" } = {}) {
     if (!processLog) return;
     const line = document.createElement("p");
-    const tones = tone ? ` ${tone}` : "";
-    line.className = `log-line${muted ? " muted" : tones}`;
+    line.className = `log-line${muted ? " muted" : tone ? ` ${tone}` : ""}`;
     line.textContent = message;
     processLog.appendChild(line);
     processLog.scrollTop = processLog.scrollHeight;
   }
 
   function clearLog() {
-    if (!processLog) return;
-    processLog.innerHTML = "";
+    if (processLog) processLog.innerHTML = "";
   }
 
-  function mostrarErro(msg) {
+  function showError(message) {
     if (!frontError) return;
-    frontError.textContent = msg;
+    frontError.textContent = message;
     frontError.classList.remove("hidden");
   }
 
-  function limparErro() {
+  function clearError() {
     if (!frontError) return;
     frontError.textContent = "";
     frontError.classList.add("hidden");
@@ -118,6 +115,9 @@
     document.getElementById("result-linhas").textContent = resumo.linhas_inseridas ?? 0;
     document.getElementById("result-celulas").textContent = resumo.celulas_escritas ?? 0;
     document.getElementById("result-erros").textContent = resumo.total_erros_escrita ?? 0;
+    if (resultSummaryText) {
+      resultSummaryText.textContent = (resumo.total_erros_escrita ?? 0) > 0 ? "Concluído com ressalvas" : "Pronto para download";
+    }
   }
 
   function showResultSuccess(data) {
@@ -125,8 +125,8 @@
     resultPanel.classList.remove("hidden");
     resultBanner.classList.remove("is-error");
     resultBanner.classList.add("is-success");
-    resultStatus.textContent = "Concluido";
-    resultTitle.textContent = "Importacao concluida com sucesso";
+    resultStatus.textContent = "Concluído";
+    resultTitle.textContent = "Importação concluída com sucesso";
     if (data.download_url) {
       downloadLink.href = data.download_url;
       downloadLink.classList.remove("hidden");
@@ -144,13 +144,43 @@
     resultTitle.textContent = message;
     downloadLink.classList.add("hidden");
     resultResetBtn?.classList.remove("hidden");
+    if (resultSummaryText) resultSummaryText.textContent = "Aguardando correção";
   }
 
-  function atualizarNomeArquivo(item) {
+  function updateFileCard(item) {
     const file = item.input.files && item.input.files[0];
     if (item.nameEl) item.nameEl.textContent = file ? file.name : "Nenhum arquivo selecionado";
     if (item.infoEl) item.infoEl.textContent = file ? `${formatFileSize(file.size)} · carregado` : "Aguardando upload";
     item.input.closest(".file-card")?.classList.toggle("has-file", Boolean(file));
+  }
+
+  function selectedFiles() {
+    return inputs.filter((item) => item.input.files && item.input.files.length > 0);
+  }
+
+  function updateSelectionSummary() {
+    const total = selectedFiles().length;
+    if (selectionSummary) selectionSummary.textContent = `${total} de 4 arquivos selecionados`;
+    if (flowStatus) flowStatus.textContent = total ? "Pronto para processar" : "Aguardando arquivos";
+  }
+
+  function replaceLogs(logs) {
+    if (!processLog) return;
+    processLog.innerHTML = "";
+    if (!Array.isArray(logs) || !logs.length) {
+      addLog("Aguardando retorno do backend...", { muted: true });
+      return;
+    }
+    logs.forEach((entry) => {
+      addLog(entry.message || "", { tone: entry.tone || "info" });
+    });
+  }
+
+  function logSelectedFiles() {
+    selectedFiles().forEach((item) => {
+      const file = item.input.files[0];
+      addLog(`✓ ${file.name} carregado (${formatFileSize(file.size)})`, { tone: "ok" });
+    });
   }
 
   function resetUI() {
@@ -158,22 +188,21 @@
     clearInterval(pollTimer);
     progressTimer = null;
     pollTimer = null;
-    currentPhaseIndex = -1;
     setProgress(0);
     setStepState(1);
     setPhaseState(-1);
     clearLog();
-    addLog("Envie de 1 a 4 arquivos .txt e clique em processar. O arquivo de orcamento sera gerado automaticamente.", { muted: true });
-    limparErro();
+    addLog("Envie de 1 a 4 arquivos .txt e clique em processar. O arquivo de orçamento será gerado automaticamente.", { muted: true });
+    clearError();
     if (resultPanel) resultPanel.classList.add("hidden");
     resultResetBtn?.classList.add("hidden");
     downloadLink?.classList.add("hidden");
     if (flowStatus) flowStatus.textContent = "Aguardando arquivos";
-    if (selectionSummary) selectionSummary.textContent = `${filesSelecionados().length} de 4 arquivos selecionados`;
+    if (resultSummaryText) resultSummaryText.textContent = "Pronto para download";
     inputs.forEach((item) => item.input.closest(".file-card")?.classList.remove("is-processing"));
     if (btn) {
       btn.disabled = false;
-      btn.textContent = "Processar orcamento";
+      btn.innerHTML = '<span class="btn-icon" aria-hidden="true">▶</span><span>Processar orçamento</span>';
     }
   }
 
@@ -198,29 +227,6 @@
     progressTimer = window.setInterval(advance, 900);
   }
 
-  function filesSelecionados() {
-    return inputs.filter((item) => item.input.files && item.input.files.length > 0);
-  }
-
-  function registrarArquivosSelecionados() {
-    filesSelecionados().forEach((item) => {
-      const file = item.input.files[0];
-      addLog(`✓ ${file.name} carregado (${formatFileSize(file.size)})`, { tone: "ok" });
-    });
-  }
-
-  function replaceLogs(logs) {
-    if (!processLog) return;
-    processLog.innerHTML = "";
-    if (!Array.isArray(logs) || !logs.length) {
-      addLog("Aguardando retorno do backend...", { muted: true });
-      return;
-    }
-    logs.forEach((entry) => {
-      addLog(entry.message || "", { tone: entry.tone || "info" });
-    });
-  }
-
   async function pollJob(jobId) {
     clearInterval(progressTimer);
     progressTimer = null;
@@ -233,7 +239,7 @@
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.erro || "Nao foi possivel consultar o status do processamento.");
+        throw new Error(data.erro || "Não foi possível consultar o status do processamento.");
       }
 
       setProgress(data.progress ?? 0);
@@ -272,9 +278,9 @@
         setProgress(100);
         setStepState(3);
         setPhaseState(phases.length);
-        const errorMessage = data.error || data.message || "Nao foi possivel concluir a importacao.";
+        const errorMessage = data.error || data.message || "Não foi possível concluir a importação.";
         showResultError(errorMessage);
-        mostrarErro(errorMessage);
+        showError(errorMessage);
       }
     };
 
@@ -286,63 +292,53 @@
         const errorMessage = error.message || "Falha ao consultar o status do processamento.";
         addLog(errorMessage, { tone: "warn" });
         showResultError(errorMessage);
-        mostrarErro(errorMessage);
+        showError(errorMessage);
         inputs.forEach((item) => item.input.closest(".file-card")?.classList.remove("is-processing"));
         btn.disabled = false;
-        btn.textContent = "Processar orcamento";
+        btn.innerHTML = '<span class="btn-icon" aria-hidden="true">▶</span><span>Processar orçamento</span>';
       });
     }, 900);
   }
 
-  function atualizarResumoSelecao() {
-    const quantidade = filesSelecionados().length;
-    if (selectionSummary) {
-      selectionSummary.textContent = `${quantidade} de 4 arquivos selecionados`;
-    }
-    if (flowStatus) {
-      flowStatus.textContent = quantidade ? "Pronto para processar" : "Aguardando arquivos";
-    }
+  function handleReset() {
+    form.reset();
+    inputs.forEach(updateFileCard);
+    updateSelectionSummary();
+    resetUI();
   }
 
   inputs.forEach((item) => {
     item.input.addEventListener("change", () => {
-      atualizarNomeArquivo(item);
-      atualizarResumoSelecao();
-      limparErro();
+      updateFileCard(item);
+      updateSelectionSummary();
+      clearError();
     });
-    atualizarNomeArquivo(item);
+    updateFileCard(item);
   });
-
-  function handleReset() {
-    form.reset();
-    inputs.forEach(atualizarNomeArquivo);
-    atualizarResumoSelecao();
-    resetUI();
-  }
 
   resetBtn?.addEventListener("click", handleReset);
   resultResetBtn?.addEventListener("click", handleReset);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    limparErro();
+    clearError();
 
-    const selecionados = filesSelecionados();
-    if (!selecionados.length) {
-      mostrarErro("Selecione ao menos 1 arquivo .txt antes de processar.");
+    const files = selectedFiles();
+    if (!files.length) {
+      showError("Selecione ao menos 1 arquivo .txt antes de processar.");
       return;
     }
 
     if (btn.disabled) return;
 
     btn.disabled = true;
-    btn.textContent = "Processando orcamento...";
+    btn.innerHTML = '<span class="btn-icon" aria-hidden="true">…</span><span>Processando...</span>';
     if (resultPanel) resultPanel.classList.add("hidden");
     resultResetBtn?.classList.add("hidden");
     clearLog();
-    registrarArquivosSelecionados();
+    logSelectedFiles();
     if (flowStatus) flowStatus.textContent = "Processando";
-    selecionados.forEach((item) => item.input.closest(".file-card")?.classList.add("is-processing"));
+    files.forEach((item) => item.input.closest(".file-card")?.classList.add("is-processing"));
     startVisualProgress();
 
     try {
@@ -362,17 +358,18 @@
       progressTimer = null;
 
       if (!response.ok || !data.job_id) {
-        const errorMessage = data.erro || "Nao foi possivel iniciar a importacao.";
+        const errorMessage = data.erro || "Não foi possível iniciar a importação.";
         setProgress(100);
         setStepState(3);
         setPhaseState(phases.length);
         if (flowStatus) flowStatus.textContent = "Falha no processamento";
         addLog(errorMessage, { tone: "warn" });
         showResultError(errorMessage);
-        mostrarErro(errorMessage);
+        showError(errorMessage);
         return;
       }
-      addLog("Job criado. Acompanhando progresso real do backend...", { tone: "info" });
+
+      addLog("Job criado. Acompanhando o progresso real do backend...", { tone: "info" });
       await pollJob(data.job_id);
     } catch (error) {
       clearInterval(progressTimer);
@@ -381,17 +378,19 @@
       pollTimer = null;
       setProgress(100);
       setStepState(3);
-      const errorMessage = "Falha de comunicacao com o servidor. Tente novamente.";
-      if (flowStatus) flowStatus.textContent = "Falha de comunicacao";
+      setPhaseState(phases.length);
+      const errorMessage = "Falha de comunicação com o servidor. Tente novamente.";
+      if (flowStatus) flowStatus.textContent = "Falha de comunicação";
       addLog(errorMessage, { tone: "warn" });
       showResultError(errorMessage);
-      mostrarErro(errorMessage);
+      showError(errorMessage);
     } finally {
       inputs.forEach((item) => item.input.closest(".file-card")?.classList.remove("is-processing"));
       btn.disabled = false;
-      btn.textContent = "Processar orcamento";
+      btn.innerHTML = '<span class="btn-icon" aria-hidden="true">▶</span><span>Processar orçamento</span>';
     }
   });
 
-  atualizarResumoSelecao();
+  updateSelectionSummary();
+  resetUI();
 })();
