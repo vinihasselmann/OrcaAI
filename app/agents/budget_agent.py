@@ -6,7 +6,7 @@ import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from openpyxl.utils import column_index_from_string
 
@@ -56,6 +56,27 @@ class BudgetAgent:
 
     def __init__(self) -> None:
         self._logger = logger
+
+    def _emitir_progresso(
+        self,
+        callback: Callable[[dict[str, Any]], None] | None,
+        *,
+        progress: int,
+        phase: str,
+        message: str,
+        tone: str = "info",
+    ) -> None:
+        """Emite evento de progresso quando houver callback registrado."""
+        if not callback:
+            return
+        callback(
+            {
+                "progress": progress,
+                "phase": phase,
+                "message": message,
+                "tone": tone,
+            }
+        )
 
     @staticmethod
     def _normalizar_texto(valor: Any) -> str:
@@ -230,17 +251,22 @@ class BudgetAgent:
         self,
         caminho_txt: str | Path,
         caminho_xlsx: str | Path,
+        *,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
     ) -> ResultadoProcessamento:
         """Compatibilidade para fluxo antigo (arquivo unico)."""
         return self.processar_arquivos_txt(
             lista_arquivos=[caminho_txt],
             caminho_template_excel=caminho_xlsx,
+            progress_callback=progress_callback,
         )
 
     def processar_arquivos_txt(
         self,
         lista_arquivos: list[str | Path],
         caminho_template_excel: str | Path,
+        *,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
     ) -> ResultadoProcessamento:
         """Executa importacao de um ou mais TXT em um unico processamento."""
         if not lista_arquivos:
@@ -250,6 +276,12 @@ class BudgetAgent:
         template_path = Path(caminho_template_excel)
 
         self._logger.info("1/10 Recebendo lista de arquivos TXT...")
+        self._emitir_progresso(
+            progress_callback,
+            progress=5,
+            phase="leitura",
+            message="Recebendo lista de arquivos TXT...",
+        )
         for path in txt_paths:
             if not path.exists():
                 raise BudgetAgentError(f"Arquivo TXT nao encontrado: {path}")
@@ -257,12 +289,24 @@ class BudgetAgent:
                 raise BudgetAgentError(f"Arquivo invalido (esperado .txt): {path}")
 
         self._logger.info("2/10 Identificando tipo e parseando cada arquivo...")
+        self._emitir_progresso(
+            progress_callback,
+            progress=15,
+            phase="leitura",
+            message="Identificando tipo e parseando cada arquivo...",
+        )
         documentos: list[DocumentoImportado] = []
         for path in txt_paths:
             self._logger.info("Parseando: %s", path)
             documentos.append(parsear_documento(path))
 
         self._logger.info("3/10 Validando documentos importados...")
+        self._emitir_progresso(
+            progress_callback,
+            progress=30,
+            phase="validacao",
+            message="Validando documentos importados...",
+        )
         erros_documento: list[str] = []
         for path, doc in zip(txt_paths, documentos):
             erros = validar_documento_importado(doc)
@@ -276,6 +320,12 @@ class BudgetAgent:
             )
 
         self._logger.info("4/10 Validando template Excel existente...")
+        self._emitir_progresso(
+            progress_callback,
+            progress=40,
+            phase="validacao",
+            message="Validando template Excel existente...",
+        )
         if not template_path.exists():
             raise BudgetAgentError(f"Template Excel nao encontrado: {template_path}")
         if template_path.suffix.lower() != ".xlsx":
@@ -284,6 +334,12 @@ class BudgetAgent:
             )
 
         self._logger.info("5/10 Gerando contexto de leitura da planilha...")
+        self._emitir_progresso(
+            progress_callback,
+            progress=52,
+            phase="calculo",
+            message="Gerando contexto de leitura da planilha...",
+        )
         contexto_planilha = self.gerar_contexto_planilha(template_path)
         if ABA_PRINCIPAL not in contexto_planilha.get("abas_disponiveis", []):
             raise BudgetAgentError(
@@ -291,6 +347,12 @@ class BudgetAgent:
             )
 
         self._logger.info("6/10 Mapeando registros para a aba '%s'...", ABA_PRINCIPAL)
+        self._emitir_progresso(
+            progress_callback,
+            progress=65,
+            phase="calculo",
+            message="Mapeando registros para a planilha...",
+        )
         mapeamentos_totais: list[MapeamentoExcel] = []
         proxima_linha = contexto_planilha.get("proxima_linha_por_aba", {}).get(
             ABA_PRINCIPAL, 2
@@ -308,6 +370,12 @@ class BudgetAgent:
             raise BudgetAgentError("Nenhum mapeamento foi gerado para escrita.")
 
         self._logger.info("7/10 Validando mapeamentos...")
+        self._emitir_progresso(
+            progress_callback,
+            progress=78,
+            phase="validacao",
+            message="Validando mapeamentos gerados...",
+        )
         erros_mapeamento = validar_lista_mapeamentos(
             mapeamentos_totais, contexto_planilha=contexto_planilha
         )
@@ -324,6 +392,12 @@ class BudgetAgent:
             )
 
         self._logger.info("8/10 Escrevendo em modo append seguro...")
+        self._emitir_progresso(
+            progress_callback,
+            progress=88,
+            phase="escrita",
+            message="Escrevendo em modo append seguro...",
+        )
         resultado_escrita: ResultadoEscrita = aplicar_mapeamentos_excel(
             caminho_planilha=template_path,
             mapeamentos=mapeamentos_totais,
@@ -333,6 +407,13 @@ class BudgetAgent:
 
         self._logger.info("9/10 Arquivo final salvo em: %s", resultado_escrita.arquivo_saida)
         self._logger.info("10/10 Importacao concluida com sucesso.")
+        self._emitir_progresso(
+            progress_callback,
+            progress=100,
+            phase="exportacao",
+            message=f"Arquivo final salvo em: {resultado_escrita.arquivo_saida.name}",
+            tone="ok",
+        )
 
         total_registros = sum(len(doc.registros) for doc in documentos)
         return ResultadoProcessamento(

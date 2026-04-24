@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -31,9 +32,10 @@ def test_get_root_renderiza_pagina_inicial() -> None:
     resp = client.get("/")
 
     assert resp.status_code == 200
-    assert "orcamento-ai" in resp.text
-    assert "Processar or" in resp.text
-    assert "Geral Pecas Auxiliares" in resp.text
+    assert "OrcAI" in resp.text
+    assert "Processar orcamento" in resp.text
+    assert "Pecas Auxiliares" in resp.text
+    assert "Progresso do processamento" in resp.text
 
 
 def test_post_processar_gera_arquivo_final_e_permite_download(tmp_path: Path, monkeypatch) -> None:
@@ -80,4 +82,63 @@ def test_post_processar_com_arquivo_auxiliares(tmp_path: Path, monkeypatch) -> N
     match = re.search(r"/download/([^\"']+)", resp.text)
     assert match
     arquivo_gerado = output_dir / match.group(1)
+    assert arquivo_gerado.exists()
+
+
+def test_post_processar_retorna_json_para_fluxo_assincrono(tmp_path: Path, monkeypatch) -> None:
+    output_dir = _configurar_ambiente_web(tmp_path, monkeypatch)
+    client = TestClient(app)
+
+    files = {
+        "arquivo_geral": (
+            "0.Geral Pecas.txt",
+            conteudo_txt_geral_pecas().encode("utf-8"),
+            "text/plain",
+        ),
+    }
+    resp = client.post(
+        "/processar",
+        files=files,
+        headers={
+            "accept": "application/json",
+            "x-requested-with": "fetch",
+        },
+    )
+
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["sucesso"] is True
+    assert payload["download_url"]
+    arquivo_gerado = output_dir / payload["nome_arquivo"]
+    assert arquivo_gerado.exists()
+
+
+def test_processar_async_retorna_job_e_status_final(tmp_path: Path, monkeypatch) -> None:
+    output_dir = _configurar_ambiente_web(tmp_path, monkeypatch)
+    client = TestClient(app)
+
+    files = {
+        "arquivo_geral": (
+            "0.Geral Pecas.txt",
+            conteudo_txt_geral_pecas().encode("utf-8"),
+            "text/plain",
+        ),
+    }
+    start = client.post("/processar-async", files=files)
+    assert start.status_code == 202
+    job_id = start.json()["job_id"]
+
+    payload = None
+    for _ in range(30):
+        status_resp = client.get(f"/processar-status/{job_id}")
+        assert status_resp.status_code == 200
+        payload = status_resp.json()
+        if payload["status"] in {"completed", "error"}:
+            break
+        time.sleep(0.1)
+
+    assert payload is not None
+    assert payload["status"] == "completed"
+    assert payload["result"]["download_url"]
+    arquivo_gerado = output_dir / payload["result"]["nome_arquivo"]
     assert arquivo_gerado.exists()
