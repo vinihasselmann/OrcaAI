@@ -90,3 +90,5 @@ pytest
 - Definir modelos de dados do orçamento em `app/models/`.
 - Implementar integração com Excel (`openpyxl`) para atualização seletiva da planilha.
 
+
+uvicorn app.web:app --reload

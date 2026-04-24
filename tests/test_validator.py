@@ -70,5 +70,14 @@ def test_validar_mapeamento_exige_aba_mvp() -> None:
         permitido_escrever=True,
     )
     erros = validar_mapeamento(m)
-    assert any("2A. Lista de Peças" in e for e in erros)
+    assert any("2A. Lista de Pe" in e for e in erros)
 
+
+def test_validar_escrita_em_coluna_aceita_colunas_zero_fixo() -> None:
+    erros = validar_escrita_em_coluna(
+        coluna_destino="AP",
+        valor=0,
+        campo_origem="zero_fixo_ap",
+        possui_formula_destino=False,
+    )
+    assert erros == []

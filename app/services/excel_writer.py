@@ -14,7 +14,7 @@ from openpyxl import load_workbook
 from openpyxl.utils import column_index_from_string
 
 from app.models.schema import MapeamentoExcel
-from app.services.field_mapper import ABA_PRINCIPAL, MAPPING_RULES
+from app.services.field_mapper import ABA_PRINCIPAL, COLUNAS_ZERO_FIXO, MAPPING_RULES
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ def _obter_colunas_permitidas() -> set[str]:
     """Retorna conjunto de colunas permitidas para escrita na aba principal."""
     base = {"J", "K", "L", "M", "N", "P", "Q", "S", "V", "W", "X", "Y"}
     complementos: set[str] = set()
+    complementos.update(COLUNAS_ZERO_FIXO)
     for regra in MAPPING_RULES.values():
         for coluna in regra.get("mapeamento_colunas", {}).values():
             if coluna:

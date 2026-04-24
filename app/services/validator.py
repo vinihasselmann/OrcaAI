@@ -6,7 +6,7 @@ import re
 from typing import Any
 
 from app.models.schema import DocumentoImportado, MapeamentoExcel
-from app.services.field_mapper import ABA_PRINCIPAL, MAPPING_RULES
+from app.services.field_mapper import ABA_PRINCIPAL, COLUNAS_ZERO_FIXO, MAPPING_RULES
 
 TIPOS_SUPORTADOS = (
     "geral_pecas",
@@ -83,6 +83,7 @@ def _campos_mapeados_por_tipo(tipo_arquivo: str) -> set[str]:
 def _colunas_permitidas() -> set[str]:
     """Conjunto de colunas permitidas no MVP."""
     cols: set[str] = {"J", "K", "L", "M", "N", "P", "Q", "S", "V", "W", "X", "Y"}
+    cols.update(COLUNAS_ZERO_FIXO)
     for regra in MAPPING_RULES.values():
         for col in regra.get("mapeamento_colunas", {}).values():
             if col:
@@ -95,7 +96,7 @@ def _coluna_espera_numero(campo_origem: str, coluna: str) -> bool:
     if campo_origem in NUMERIC_FIELDS:
         return True
     # Colunas-base numericas da lista de pecas
-    if coluna in {"M", "N", "P", "Q", "S", "V", "W", "X", "Y"}:
+    if coluna in {"M", "N", "P", "Q", "S", "V", "W", "X", "Y", *COLUNAS_ZERO_FIXO}:
         return True
     return False
 

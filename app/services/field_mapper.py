@@ -16,6 +16,21 @@ TIPOS_SUPORTADOS = (
 ABA_PRINCIPAL = "2A. Lista de Peças"
 MODO_APPEND_SEGURO = "append_seguro"
 MODO_ATUALIZAR_IDENTIFICADOR = "atualizar_por_identificador"  # futuro
+COLUNAS_ZERO_FIXO = (
+    "Z",
+    "AA",
+    "AB",
+    "AC",
+    "AD",
+    "AI",
+    "AJ",
+    "AK",
+    "AL",
+    "AM",
+    "AN",
+    "AO",
+    "AP",
+)
 
 
 class FieldMapperError(Exception):
@@ -43,16 +58,13 @@ MAPPING_RULES: dict[str, dict[str, Any]] = {
             "area_total_m2": "X",
             "volume_total_m3": "Y",
             # Complementos (quando existentes)
-            "altura_engastamento_m": "Z",
             "parte_1_comprimento_m": "AA",
             "parte_2_comprimento_m": "AB",
             "parte_3_comprimento_m": "AC",
             "parte_4_comprimento_m": "AD",
             "continuidade_quantidade": "AE",
             "continuidade_bitola": "AF",
-            "aterramento_visibilidade": "AG",
             "condutor_pluvial_diametro": "AH",
-            "variacao_comprimento_total_cm": "AI",
         },
     },
     "geral_pecas_genericas": {
@@ -66,15 +78,15 @@ MAPPING_RULES: dict[str, dict[str, Any]] = {
             "largura_preo_m": "M",
             "taxa_ca_kg_m3": "P",
             "taxa_cp_kg_m3": "Q",
+            "laje_vao_m": "S",
             "quantidade": "V",
             "comprimento_total_m": "W",
             "area_total_m2": "X",
             "volume_total_m3": "Y",
             # Complementos (quando existentes)
-            "espessura_equivalente_cm": "Z",
-            "distribuicao_cabos": "AA",
-            "laje_vao_m": "AB",
-            "volume_preenchimento_alveolo_m3": "AC",
+            "espessura_equivalente_cm": "AE",
+            "distribuicao_cabos": "AF",
+            "volume_preenchimento_alveolo_m3": "AH",
         },
     },
     "geral_pecas_alveolares": {
@@ -92,8 +104,6 @@ MAPPING_RULES: dict[str, dict[str, Any]] = {
             "comprimento_total_m": "W",
             "area_total_m2": "X",
             "volume_total_m3": "Y",
-            # Complementos (quando existentes)
-            "variacao_comprimento_cm": "Z",
         },
     },
 }
@@ -183,6 +193,16 @@ def transformar_registro_em_colunas_alvo(
     return colunas_alvo
 
 
+def _aplicar_colunas_zero_fixo(
+    colunas_alvo: dict[str, str | float | int | None],
+) -> dict[str, str | float | int | None]:
+    """Garante preenchimento padrao com zero em colunas tecnicas fixas."""
+    resultado = dict(colunas_alvo)
+    for coluna in COLUNAS_ZERO_FIXO:
+        resultado[coluna] = 0
+    return resultado
+
+
 def gerar_proxima_linha_disponivel(
     contexto_planilha: dict[str, Any],
     aba_destino: str = ABA_PRINCIPAL,
@@ -261,7 +281,9 @@ def mapear_registro_para_excel(
         fallback_append_row=linha_base,
     )
     identificador = gerar_identificador_registro(registro)
-    colunas_alvo = transformar_registro_em_colunas_alvo(registro, regras)
+    colunas_alvo = _aplicar_colunas_zero_fixo(
+        transformar_registro_em_colunas_alvo(registro, regras)
+    )
 
     instrucoes: list[MapeamentoExcel] = []
     for campo_origem, coluna_destino in regras.get("mapeamento_colunas", {}).items():
@@ -280,6 +302,20 @@ def mapear_registro_para_excel(
                 celula_destino=f"{coluna}{linha_destino}",
                 campo_origem=campo_origem,
                 valor_convertido=valor,
+                identificador_registro=identificador,
+                permitido_escrever=True,
+            )
+        )
+
+    for coluna in COLUNAS_ZERO_FIXO:
+        instrucoes.append(
+            MapeamentoExcel(
+                aba_destino=aba_destino,
+                linha_destino=linha_destino,
+                coluna_destino=coluna,
+                celula_destino=f"{coluna}{linha_destino}",
+                campo_origem=f"zero_fixo_{coluna.lower()}",
+                valor_convertido=0,
                 identificador_registro=identificador,
                 permitido_escrever=True,
             )
@@ -310,4 +346,3 @@ def mapear_documento_para_excel(
         proxima_linha += 1
 
     return instrucoes
-
